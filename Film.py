@@ -136,8 +136,9 @@ class Film:
                 new_links_set.add(links[i])
                 new_links_list.append(links[i])
 
-        for link in new_links_list:
-            print(link)
+        # for link in new_links_list:
+        #     print(link)
+        print(links)
 
         return new_links_list
 
@@ -160,17 +161,28 @@ class Film:
         return films_handled
 
     @staticmethod
-    def save_movies_from_genre(url, pages=1, path='genre_films'):
-        if url.find('start') == -1:
-            genres = re.findall(r'genres=(.*?)&', url)[0]
-            url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=25000,&genres=' + genres + '&sort=user_rating,desc&start=1&ref_=adv_prv'
+    def save_movies_from_genre(genre, start=1, end=51, path='genre_films', min_num_votes=25000, sorting='user_rating', order='desc'):
+        url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=' + str(min_num_votes) + \
+              ',&genres=' + genre + '&sort=' + sorting + ',' + order + '&start=' + str(start) + '&ref_=adv_prv'
 
-        for i in range(pages):
-            print('Getting links from page {}... '.format(i + 1))
+        total_titles = int(re.findall(r'of (.*?) titles.</span>', urllib.request.urlopen(url).read().decode('utf-8'))[0].replace(',', ''))
+
+        if end == -1 or end > total_titles + 1:
+            end = total_titles + 1
+
+        print('Searching titles under url:\n' + url)
+        print('Total titles found - {}, Starting search from {} title, Total titles to handle {}\n\n'.format(total_titles, start, end - start))
+
+        total_films_left = end - start
+        while start < end:
+            page = int((start - 1) / 50 + 1)
+            print('Getting links from page {}... Total films left {}...'.format(page, total_films_left))
             links = Film._get_movies_from_category(url)
+            if end - start < 50:
+                links = links[:end - start]
             films_handled = []
 
-            print('\nHandling links from page {}...'.format(i + 1))
+            print('\nHandling links from page {}...'.format(page))
             for j in range(len(links)):
                 print('Handling - ' + links[j], end='')
 
@@ -181,7 +193,13 @@ class Film:
                 films_left = len(links) - j - 1
                 print(' - Success, films left - {} - Took {}s'.format(films_left, round(time_end - time_start, 2)))
 
+                if start >= end:
+                    break
+                else:
+                    start += 1
+
             start = int(re.findall(r'start=(.*?)&', url)[0]) + 50
+            total_films_left -= 50
             url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=25000,&genres=&sort=user_rating,desc&start=' + str(start) + '&ref_=adv_prv'
 
             if os.path.isfile(path + '.pickle'):
@@ -190,7 +208,7 @@ class Film:
             else:
                 already_handled_films = [] + films_handled
 
-            print('Saving films handled thus far...')
+            print('Saving films handled thus far...\n\n')
             Film.save_multiple(already_handled_films, path)
 
         print('Films saved successfully under \"{}\" name'.format(path + '.pickle'))
