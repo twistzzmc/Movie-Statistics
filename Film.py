@@ -37,6 +37,14 @@ class FilmRatings:
         else:
             return 'Ratings are not available for this title.'
 
+    def get_percentages(self):
+        percentages = []
+        for rating in self.ratings:
+            percentages.append(rating.percentage)
+        percentages.reverse()
+
+        return percentages
+
     @staticmethod
     def _get_ratings(url):
         page_text = urllib.request.urlopen(url).read().decode('utf-8')
@@ -233,3 +241,32 @@ class Film:
         with open(path, 'rb') as pickle_file:
             loaded_films = pickle.load(pickle_file)
         return loaded_films
+
+    @staticmethod
+    def get_films_from_file(path):
+        file = open(path, encoding='utf-8')
+        films = []
+
+        for line in file:
+            films.append(Film(line.strip('\n')))
+
+        return films
+
+
+class Films:
+    def __init__(self, films):
+        self.films = films
+
+    def __repr__(self):
+        films = ''
+        for film in self.films:
+            films += str(film)
+        return films
+
+    def __len__(self):
+        return len(self.films)
+
+    def get_movies_sorted_by_age(self, start=0, end=0):
+        films = self.films
+        films.sort(key=lambda x: x.year)
+        return films[start:end] if end != 0 else films[start:len(films) - 1]
