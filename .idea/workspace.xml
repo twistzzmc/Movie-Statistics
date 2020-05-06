@@ -5,7 +5,9 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Film.py" beforeDir="false" afterPath="$PROJECT_DIR$/Film.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/Stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/movies/test_action_movies.pickle" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/movies/movie_urls.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/movies/stats_test.pickle" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -47,7 +49,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.Stats">
+  <component name="RunManager" selected="Python.main">
     <configuration name="Film" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="web_browsing" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -134,8 +136,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.Stats" />
         <item itemvalue="Python.main" />
+        <item itemvalue="Python.Stats" />
         <item itemvalue="Python.Film" />
         <item itemvalue="Python.web_search" />
       </list>
@@ -159,7 +161,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>

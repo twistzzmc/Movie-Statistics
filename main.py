@@ -1,4 +1,7 @@
 from Film import Film
+from Stats import Stats
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 if __name__ == "__main__":
@@ -55,15 +58,63 @@ if __name__ == "__main__":
             - War           ('war')
             - Western       ('western')
     """
+
+    """
+    Efficient way of getting large quantities of films:
+    
+        Film.get_urls_from_genre(genre, start=1, end=51, path='genre_films', min_num_votes=25000, sorting='user_rating', order='desc')
+            Were all attributes are the same as explained in comment above. The difference is that it gets all the urls
+            and instead of creating Film instances it puts them into file (text) specified in path.
+            
+        Film.clean_urls(path)
+            Were path is path to the text file with urls (e.g. given by previous method).
+            It removes all bad urls (with some garbage in them, not for the main site of the film).
+            
+        Film.save_movies_not_already_saved_from_urls_in_file(path, path_with_pickled_films)
+            Were path is path to the text file with urls and path_with_pickled_films is path to .pickle file in which
+            you wish the save the films. It takes all the urls from file, creates an Film instance with them and save it
+            to the specified .pickle file.
+            
+        If everything goes without an error your file with urls will end up empty.
+        
+        However if an error occurs additional text file under " path[:path.find('.')] + '_copy.txt' " 
+        (e.g. if path='movies/urls.txt' then new file='movies/urls_copy.txt') with all urls that were
+        successfully saved. The file under 'path' is not changed. And you should proceed as follows:
+            
+            Film.delete_already_handled_urls(path, path_copy)
+                Were path is the path for original file with urls and path_copy is the path for created file.
+                It deletes all the already handled urls from the original file and deletes the copy.
+                
+            Go back to - Film.save_movies_not_already_saved_from_urls_in_file(path, path_with_pickled_films)
+            And do until no error occurs at which point the url file is empty.
+    """
     most_popular_movies = "https://www.imdb.com/chart/moviemeter?pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=4da9d9a5-d299-43f2-9c53-f0efa18182cd&pf_rd_r=GK4AXVJZ58WM5RH6GWF9&pf_rd_s=right-4&pf_rd_t=15506&pf_rd_i=top&ref_=chttp_ql_2"
     top_rated_movies = "https://www.imdb.com/chart/top?pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=4da9d9a5-d299-43f2-9c53-f0efa18182cd&pf_rd_r=9VQV8P7PPVQ6WSZX5943&pf_rd_s=right-4&pf_rd_t=15506&pf_rd_i=moviemeter&ref_=chtmvm_ql_3"
 
-    # films = Film.get_movies_from_ranking(action_movies)
-    # Film.save_multiple(films, 'action_movies')
+    m_all = Film.load_multiple('movies/all_movies.pickle')
+    action = Film.load_multiple('movies/action_movies.pickle')
+    popular = Film.load_multiple('movies/most_popular_movies.pickle')
+    romance = Film.load_multiple('movies/romance_movies.pickle')
+    war = Film.load_multiple('movies/war_movies.pickle')
 
-    # films = Film.load_multiple('action_movies.pickle')
-    # print(len(films))
-    # for film in films:
-    #     print(film)
+    action_common = len(Film.common_films(m_all, action))
+    popular_common = len(Film.common_films(m_all, popular))
+    romance_common = len(Film.common_films(m_all, romance))
+    war_common = len(Film.common_films(m_all, war))
 
-    Film.save_movies_from_genre('action', 1301, -1, 'movies/test_action_movies')
+    print('Total movies - {}'.format(len(Film.load_multiple('movies/all_movies.pickle'))))
+    print('Total action movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/action_movies.pickle')), action_common))
+    print('Total popular movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/most_popular_movies.pickle')), popular_common))
+    print('Total romance movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/romance_movies.pickle')), romance_common))
+    print('Total war movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/war_movies.pickle')), war_common))
+
+    print('Total action movies - {}, common with romance - {}'.format(len(action), len(Film.common_films(action, romance))))
+    print('Total action movies - {}, common with war - {}'.format(len(action), len(Film.common_films(action, war))))
+
+    # Film.save_movies_not_already_saved_from_urls_in_file('movies/romance_movies_urls.txt', 'movies/romance_movies.pickle')
+    # Film.delete_already_handled_urls('movies/romance_movies_urls.txt', 'movies/romance_movies_urls_copy.txt')
+    Film.clean_urls('movies/romance_movies_urls_copy.txt')
+
+    romance = Film.load_multiple('movies/romance_movies.pickle')
+    romance_unique = Film.get_unique_films(romance)
+    print(len(romance), len(romance_unique))

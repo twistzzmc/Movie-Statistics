@@ -45,9 +45,18 @@ class FilmRatings:
 
         return percentages
 
+    def get_votes(self):
+        votes = []
+        for rating in self.ratings:
+            votes.append(rating.votes)
+        votes.reverse()
+
+        return votes
+
     @staticmethod
     def _get_ratings(url):
-        page_text = urllib.request.urlopen(url).read().decode('utf-8')
+        page_text = Film.open_url(url)
+
         if page_text.find("<div class=\"sectionHeading\">No Ratings Available</div>") != -1:
             return None, None, None, None, None
 
@@ -64,10 +73,12 @@ class FilmRatings:
         ratings.pop(0)
 
         for i in range(10):
+            if int(total_votes[i].replace(',', '')) == 0:
+                percentage_of_votes.insert(i, '0')
+
+        for i in range(10):
             total_votes[i] = int(total_votes[i].replace(',', ''))
-            percentage_of_votes[i] = percentage_of_votes[i].strip(' ')
-            percentage_of_votes[i] = percentage_of_votes[i].strip('\n')
-            percentage_of_votes[i] = float(percentage_of_votes[i].strip('%'))
+            percentage_of_votes[i] = float(percentage_of_votes[i].strip(' ').strip('\n').strip('%'))
             ratings[i] = int(ratings[i])
 
         votes_sum = int(votes_sum[0].strip('\n').strip(' ').replace(',', ''))
@@ -88,9 +99,27 @@ class Film:
     def __repr__(self):
         return '{} {} \n{}\n{}'.format(self.title, '(' + str(self.year) + ')' if self.year is not None else '', self.url, self.stats)
 
+    def __eq__(self, other):
+        return self.title == other.title and self.year == other.year
+
+    def __hash__(self):
+        return hash((self.title, self.year))
+
+    @staticmethod
+    def open_url(url):
+        while True:
+            try:
+                page_text = urllib.request.urlopen(url).read().decode('utf-8')
+                break
+            except ConnectionError:
+                print('Connection failed! Trying again...')
+                pass
+        return page_text
+
     @staticmethod
     def _handle_url(url):
-        page_text = urllib.request.urlopen(url).read().decode('utf-8')
+        page_text = Film.open_url(url)
+
         title_and_year = re.findall(r'<meta property=\'og:title\' content=\"(.*?) - IMDb\" />', page_text)
 
         title = re.findall(r'(.*?)\(', title_and_year[0])[0].strip(' ') if title_and_year[0].find('(') != -1 else title_and_year[0]
@@ -105,7 +134,7 @@ class Film:
 
     @staticmethod
     def _get_movies_from_list(url):
-        page_text = urllib.request.urlopen(url).read().decode('utf-8')
+        page_text = Film.open_url(url)
         # page_text = page_text[page_text.find("<td class=\"titleColumn\">"):]
         links = re.findall(r'<a href=\"(.*?)\"', page_text, re.DOTALL)
 
@@ -127,7 +156,7 @@ class Film:
 
     @staticmethod
     def _get_movies_from_category(url):
-        page_text = urllib.request.urlopen(url).read().decode('utf-8')
+        page_text = Film.open_url(url)
         page_text = page_text[page_text.find("<div class=\"lister-item-image float-left\">"):]
         links = re.findall(r'<a href=\"(.*?)\"', page_text)
 
@@ -140,7 +169,7 @@ class Film:
         new_links_set = set()
         new_links_list = list()
         for i in range(len(links)):
-            if links[i] not in new_links_set:
+            if links[i] not in new_links_set and links[i].find('plotsummary') == - 1:
                 new_links_set.add(links[i])
                 new_links_list.append(links[i])
 
@@ -173,7 +202,7 @@ class Film:
         url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=' + str(min_num_votes) + \
               ',&genres=' + genre + '&sort=' + sorting + ',' + order + '&start=' + str(start) + '&ref_=adv_prv'
 
-        total_titles = int(re.findall(r'of (.*?) titles.</span>', urllib.request.urlopen(url).read().decode('utf-8'))[0].replace(',', ''))
+        total_titles = int(re.findall(r'of (.*?) titles.</span>', Film.open_url(url))[0].replace(',', ''))
 
         if end == -1 or end > total_titles + 1:
             end = total_titles + 1
@@ -190,7 +219,7 @@ class Film:
                 links = links[:end - start]
             films_handled = []
 
-            print('\nHandling links from page {}...'.format(page))
+            print('\nHandling links from page {}, index of first movie - {}...'.format(page, start))
             for j in range(len(links)):
                 print('Handling - ' + links[j], end='')
 
@@ -208,18 +237,61 @@ class Film:
 
             start = int(re.findall(r'start=(.*?)&', url)[0]) + 50
             total_films_left -= 50
-            url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=25000,&genres=&sort=user_rating,desc&start=' + str(start) + '&ref_=adv_prv'
+            url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=' + str(min_num_votes) + \
+                  ',&genres=' + genre + '&sort=' + sorting + ',' + order + '&start=' + str(start) + '&ref_=adv_prv'
 
-            if os.path.isfile(path + '.pickle'):
+            if os.path.isfile(path):
                 print('Loading films already handled...')
-                already_handled_films = Film.load_multiple(path + '.pickle') + films_handled
+                already_handled_films = Film.load_multiple(path) + films_handled
             else:
                 already_handled_films = [] + films_handled
 
             print('Saving films handled thus far...\n\n')
-            Film.save_multiple(already_handled_films, path)
+            Film.save_multiple(Film.get_unique_films(already_handled_films), path)
 
-        print('Films saved successfully under \"{}\" name'.format(path + '.pickle'))
+        print('Films saved successfully under \"{}\" name'.format(path))
+
+    @staticmethod
+    def get_urls_from_genre(genre, start=1, end=51, path='genre_films', min_num_votes=25000, sorting='user_rating', order='desc'):
+        url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=' + str(min_num_votes) + \
+              ',&genres=' + genre + '&sort=' + sorting + ',' + order + '&start=' + str(start) + '&ref_=adv_prv'
+
+        total_titles = int(re.findall(r'of (.*?) titles.</span>', Film.open_url(url))[0].replace(',', ''))
+
+        if end == -1 or end > total_titles + 1:
+            end = total_titles + 1
+
+        print('Searching titles under url:\n' + url)
+        print('Total titles found - {}, Starting search from {} title, Total titles to handle {}\n'.format(total_titles, start, end - start))
+
+        all_urls = set()
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    all_urls.add(line.strip('\n'))
+        except FileNotFoundError:
+            pass
+
+        total_films_left = end - start
+        file = open(path, 'a')
+        while start < end:
+            page = int((start - 1) / 50 + 1)
+            print('\nGetting links from page {}... Total films left {}...\nurl - {}'.format(page, total_films_left, url))
+            links = Film._get_movies_from_category(url)
+            if end - start < 50:
+                links = links[:end - start]
+
+            print('Handling links from page {}, index of first movie - {}...'.format(page, start))
+            for j in range(len(links)):
+                if links[j] not in all_urls:
+                    file.write(links[j] + '\n')
+
+            start = int(re.findall(r'start=(.*?)&', url)[0]) + 50
+            total_films_left -= 50
+            url = 'https://www.imdb.com/search/title/?title_type=feature&num_votes=' + str(min_num_votes) + \
+                  ',&genres=' + genre + '&sort=' + sorting + ',' + order + '&start=' + str(start) + '&ref_=adv_prv'
+
+        file.close()
 
     def save(self):
         with open(self.title + '.pickle', 'wb') as pickle_file:
@@ -227,7 +299,7 @@ class Film:
 
     @staticmethod
     def save_multiple(films_to_save, path='films'):
-        with open(path + '.pickle', 'wb') as pickle_file:
+        with open(path, 'wb') as pickle_file:
             pickle.dump(films_to_save, pickle_file)
 
     @staticmethod
@@ -252,21 +324,102 @@ class Film:
 
         return films
 
-
-class Films:
-    def __init__(self, films):
-        self.films = films
-
-    def __repr__(self):
-        films = ''
-        for film in self.films:
-            films += str(film)
+    @staticmethod
+    def get_unique_films(films):
+        films_set = set()
+        for i in range(len(films) - 1, -1, -1):
+            if films[i] not in films_set:
+                films_set.add(films[i])
+            else:
+                films.pop(i)
         return films
 
-    def __len__(self):
-        return len(self.films)
+    @staticmethod
+    def save_to_all_movies(path, all_movies_path='movies/all_movies.pickle'):
+        films = Film.load_multiple(path)
+        all_films = Film.load_multiple(all_movies_path)
 
-    def get_movies_sorted_by_age(self, start=0, end=0):
-        films = self.films
-        films.sort(key=lambda x: x.year)
-        return films[start:end] if end != 0 else films[start:len(films) - 1]
+        all_films_set = set(all_films)
+        movies_to_save = [film for film in films if film not in all_films_set]
+
+        new_all_films = all_films + Film.get_unique_films(movies_to_save)
+        Film.save_multiple(new_all_films, all_movies_path)
+
+    @staticmethod
+    def save_movies_not_already_saved_from_urls_in_file(path, path_with_pickled_films):
+        if os.path.isfile(path_with_pickled_films):
+            links_set = set([film.url for film in Film.load_multiple(path_with_pickled_films)])
+        else:
+            links_set = set()
+
+        with open(path, "r+") as f, open(path[:path.find('.')] + '_copy.txt', 'w', buffering=1) as f_copy:
+            new_f = f.readlines()
+            f.seek(0)
+            for i, line in enumerate(new_f):
+                if line.strip('\n') not in links_set:
+                    print("Handling movie - {} - ".format(line.strip('\n')), end='')
+                    time_start = time.time()
+                    film = [Film(line.strip('\n'))]
+                    time_end = time.time()
+                    print("success - took {}, Saving movie".format(round(time_end - time_start, 2)), end='')
+
+                    try:
+                        already_saved = Film.load_multiple(path_with_pickled_films)
+                        Film.save_multiple(already_saved + film, path_with_pickled_films)
+                    except FileNotFoundError:
+                        Film.save_multiple(film, path_with_pickled_films)
+
+                    print(' - success, Deleting line - ', end='')
+                    f_copy.write(line)
+                    f.write(line)
+                    print(' - success')
+
+                f.truncate()
+
+        os.remove('copy_' + path)
+
+    @staticmethod
+    def clean_urls(path):
+        delete_if_found = ['synopsis']
+
+        with open(path, 'r+') as f:
+            new_f = f.readlines()
+            f.seek(0)
+            for line in new_f:
+                for el in delete_if_found:
+                    if line.find(el) == -1:
+                        f.write(line)
+
+            f.truncate()
+
+    @staticmethod
+    def delete_already_handled_urls(path, path_copy):
+        with open(path, 'r+') as file, open(path_copy, 'r') as file_copy:
+            copy_lines_set = set(file_copy.readlines())
+            lines = file.readlines()
+
+            file.seek(0)
+            for line in lines:
+                if line not in copy_lines_set:
+                    file.write(line)
+
+            file.truncate()
+
+        os.remove(path_copy)
+
+    @staticmethod
+    def common_films(films1, films2):
+        films1_set = set(films1)
+        common_films = []
+
+        for film in films2:
+            if film in films1_set:
+                common_films.append(film)
+
+        return common_films
+
+    @staticmethod
+    def search_by_url(films, url):
+        for film in films:
+            if film.url == url:
+                return film

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
+import matplotlib.transforms as trf
 import numpy as np
-import Film
+from Film import Film
 import random
 import scipy.stats as stats
 import math
@@ -39,7 +40,7 @@ class Stats:
         plt.ylabel('Percentage of votes')
         plt.title('Comparing {} movies'.format(len(films)))
 
-        plt.axis([1, 10, 0, 100])
+        plt.axis([1, 10, 0, 60])
 
         used_colors = set()
         for film in films:
@@ -133,20 +134,46 @@ class Stats:
         plt.plot(intervals, average_interval_rankings, 'b-')
         plt.show()
 
+    @staticmethod
+    def plot_averaged_films_rankings_votes_distribution(films):
+        averaged_rankings = [(0, 0)] * 10
+        for film in films:
+            percentages = film.stats.get_percentages()
+            averaged_rankings = [(averaged_rankings[i][0] + percentages[i], averaged_rankings[i][1] + 1) for i in range(len(percentages))]
+        averaged_rankings = [round(averaged_ranking[0] / averaged_ranking[1], 2) for averaged_ranking in averaged_rankings]
 
-if __name__ == "__main__":
-    # Film.save_multiple(Film.get_films_from_file('movies/movie_urls.txt'), 'stats_test')
-    # Stats.plot_films(Film.load_multiple('movies/stats_test.pickle'))
+        plt.title('Averaged percentages of rankings of {} films'.format(len(films)))
+        plt.xlabel('Rankings')
+        plt.ylabel('Averaged percentages of votes')
 
-    # Stats.plot_normal_distribution([(0, 1.0, 'red'), (0, 0.2, 'blue'),
-    #                                 (0, 5.0, 'yellow'), (-2, 0.5, 'green')])
+        plt.plot([i + 1 for i in range(10)], averaged_rankings, 'bo--')
+        plt.axis([1, 10, 0, 40])
+        for i in range(10):
+            plt.annotate(str(averaged_rankings[i]) + '%', (i + 1, averaged_rankings[i] + 1))
+        plt.show()
 
-    # fs = Film.load_multiple('movies/stats_test.pickle')
-    # for f in fs:
-        # if f.title == 'Little Women':
-        # Stats.plot_normal_distribution_of_film(f)
+    @staticmethod
+    def correlation_between_number_of_votes_and_average_vote(films):
+        means = []
+        vote_sums = []
+        for film in films:
+            votes = film.stats.get_votes()
+            mean = sum([(i + 1) * votes[i] for i in range(len(votes))]) / film.stats.votes_sum
 
-    f = Film.Films(Film.Film.load_multiple('movies/most_popular_movies.pickle'))
-    oldest_films = f.get_movies_sorted_by_age(0, 3)
-    newest_films = f.get_movies_sorted_by_age(246)
-    Stats.plot_year_percentage_of_ranking(f.films, 1)
+            means.append(mean)
+            vote_sums.append(film.stats.votes_sum)
+
+        correlation = stats.pearsonr(means, vote_sums)
+
+        plt.title('Average vote and number of votes (n = {})'.format(len(films)))
+        plt.xlabel('Average vote')
+        plt.ylabel('Number of votes')
+
+        plt.plot(means, vote_sums, 'bo')
+        plt.gcf().text(0.02, 0.95, 'Pearson’s correlation coefficient = {}\nProbability of accidental correlation = {}'
+                       .format(round(correlation[0], 3), correlation[1]),
+                       fontsize=10, verticalalignment='top',
+                       bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        plt.subplots_adjust(top=0.80)
+
+        plt.show()
