@@ -380,30 +380,35 @@ class Film:
 
     @staticmethod
     def clean_urls(path):
+        if path.find('.pickle') != 1:
+            raise Exception('Wrong file \".pickle\"')
+
         delete_if_found = ['synopsis']
 
-        with open(path, 'r+') as f:
-            new_f = f.readlines()
-            f.seek(0)
-            for line in new_f:
+        with open(path, 'r') as f:
+            lines = f.readlines()
+        with open(path, 'w') as f:
+            for line in lines:
+                write = True
                 for el in delete_if_found:
-                    if line.find(el) == -1:
-                        f.write(line)
-
-            f.truncate()
+                    if line.find(el) != -1:
+                        write = False
+                if write:
+                    f.write(line)
 
     @staticmethod
     def delete_already_handled_urls(path, path_copy):
-        with open(path, 'r+') as file, open(path_copy, 'r') as file_copy:
-            copy_lines_set = set(file_copy.readlines())
-            lines = file.readlines()
+        if path.find('.pickle') != 1 or path_copy.find('.pickle'):
+            raise Exception('Wrong file \".pickle\"')
 
-            file.seek(0)
+        with open(path, 'r') as f, open(path_copy) as f_copy:
+            lines = [line.strip('\n') for line in f.readlines()]
+            lines_copy_set = set([line.strip('\n') for line in f_copy.readlines()])
+
+        with open(path, 'w') as f:
             for line in lines:
-                if line not in copy_lines_set:
-                    file.write(line)
-
-            file.truncate()
+                if line not in lines_copy_set:
+                    f.write(line + "\n")
 
         os.remove(path_copy)
 

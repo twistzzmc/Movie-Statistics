@@ -113,7 +113,8 @@ if __name__ == "__main__":
 
     # Film.save_movies_not_already_saved_from_urls_in_file('movies/romance_movies_urls.txt', 'movies/romance_movies.pickle')
     # Film.delete_already_handled_urls('movies/romance_movies_urls.txt', 'movies/romance_movies_urls_copy.txt')
-    Film.clean_urls('movies/romance_movies_urls_copy.txt')
+    # Film.clean_urls('movies/romance_movies_urls.txt')
+    print(Film.search_by_url(Film.load_multiple('movies/romance_movies.pickle'), "https://www.imdb.com//title/tt0290839/?ref_=ttls_li_tt"))
 
     romance = Film.load_multiple('movies/romance_movies.pickle')
     romance_unique = Film.get_unique_films(romance)
