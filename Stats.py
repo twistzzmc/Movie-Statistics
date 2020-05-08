@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
-import matplotlib.transforms as trf
 import numpy as np
-from Film import Film
 import random
 import scipy.stats as stats
 import math
@@ -147,7 +145,7 @@ class Stats:
         plt.ylabel('Averaged percentages of votes')
 
         plt.plot([i + 1 for i in range(10)], averaged_rankings, 'bo--')
-        plt.axis([1, 10, 0, 40])
+        plt.axis([1, 10, 0, 70])
         for i in range(10):
             plt.annotate(str(averaged_rankings[i]) + '%', (i + 1, averaged_rankings[i] + 1))
         plt.show()
@@ -170,6 +168,33 @@ class Stats:
         plt.ylabel('Number of votes')
 
         plt.plot(means, vote_sums, 'bo')
+        plt.gcf().text(0.02, 0.95, 'Pearson’s correlation coefficient = {}\nProbability of accidental correlation = {}'
+                       .format(round(correlation[0], 3), correlation[1]),
+                       fontsize=10, verticalalignment='top',
+                       bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+        plt.subplots_adjust(top=0.80)
+
+        plt.show()
+
+    @staticmethod
+    def correlation_between_year_and_average_vote(films):
+        means = []
+        years = []
+        for film in films:
+            votes = film.stats.get_votes()
+            mean = sum([(i + 1) * votes[i] for i in range(len(votes))]) / film.stats.votes_sum
+
+            if film.year is not None:
+                means.append(mean)
+                years.append(film.year)
+
+        correlation = stats.pearsonr(means, years)
+
+        plt.title('Average vote and year (n = {})'.format(len(films)))
+        plt.xlabel('Average vote')
+        plt.ylabel('Year')
+
+        plt.plot(means, years, 'bo')
         plt.gcf().text(0.02, 0.95, 'Pearson’s correlation coefficient = {}\nProbability of accidental correlation = {}'
                        .format(round(correlation[0], 3), correlation[1]),
                        fontsize=10, verticalalignment='top',

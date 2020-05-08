@@ -4,8 +4,13 @@
     <list default="true" id="cd644dce-c633-4688-85e9-eaf33085b479" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Film.py" beforeDir="false" afterPath="$PROJECT_DIR$/Film.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/Stats.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/archive/urls.txt" beforeDir="false" afterPath="$PROJECT_DIR$/archive/urls.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/movies/all_movies.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/movies/all_movies.pickle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/movies/romance_movies.pickle" beforeDir="false" afterPath="$PROJECT_DIR$/movies/romance_movies.pickle" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/movies/romance_movies_urls.txt" beforeDir="false" afterPath="$PROJECT_DIR$/movies/romance_movies_urls.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/movies/romance_movies_urls_copy.txt" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

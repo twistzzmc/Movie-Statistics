@@ -111,7 +111,7 @@ class Film:
             try:
                 page_text = urllib.request.urlopen(url).read().decode('utf-8')
                 break
-            except ConnectionError:
+            except Exception:
                 print('Connection failed! Trying again...')
                 pass
         return page_text
@@ -348,7 +348,7 @@ class Film:
     @staticmethod
     def save_movies_not_already_saved_from_urls_in_file(path, path_with_pickled_films):
         if os.path.isfile(path_with_pickled_films):
-            links_set = set([film.url for film in Film.load_multiple(path_with_pickled_films)])
+            links_set = set([film.url.strip('\n') for film in Film.load_multiple(path_with_pickled_films)])
         else:
             links_set = set()
 
@@ -361,7 +361,8 @@ class Film:
                     time_start = time.time()
                     film = [Film(line.strip('\n'))]
                     time_end = time.time()
-                    print("success - took {}, Saving movie".format(round(time_end - time_start, 2)), end='')
+                    print("success - took {}, films left - {}, Saving movie"
+                          .format(round(time_end - time_start, 2), len(new_f) - i - 1), end='')
 
                     try:
                         already_saved = Film.load_multiple(path_with_pickled_films)
@@ -371,16 +372,16 @@ class Film:
 
                     print(' - success, Deleting line - ', end='')
                     f_copy.write(line)
-                    f.write(line)
                     print(' - success')
+                else:
+                    f_copy.write(line)
+                    print('Film - {} - already in this .pickle file'.format(line.strip('\n')))
 
-                f.truncate()
-
-        os.remove('copy_' + path)
+        os.remove(path[:path.find('.')] + '_copy.txt')
 
     @staticmethod
     def clean_urls(path):
-        if path.find('.pickle') != 1:
+        if path.find('.pickle') != -1:
             raise Exception('Wrong file \".pickle\"')
 
         delete_if_found = ['synopsis']
@@ -398,10 +399,10 @@ class Film:
 
     @staticmethod
     def delete_already_handled_urls(path, path_copy):
-        if path.find('.pickle') != 1 or path_copy.find('.pickle'):
+        if path.find('.pickle') != -1 or path_copy.find('.pickle') != -1:
             raise Exception('Wrong file \".pickle\"')
 
-        with open(path, 'r') as f, open(path_copy) as f_copy:
+        with open(path, 'r') as f, open(path_copy, 'r') as f_copy:
             lines = [line.strip('\n') for line in f.readlines()]
             lines_copy_set = set([line.strip('\n') for line in f_copy.readlines()])
 
@@ -428,3 +429,27 @@ class Film:
         for film in films:
             if film.url == url:
                 return film
+
+    @staticmethod
+    def print_dependencies_between_film_files(files, types):
+        films = [Film.load_multiple(file) for file in files]
+
+        for i, group in enumerate(films):
+            print('Total {} movies - {}'.format(types[i], len(group)))
+        print()
+
+        for i in range(len(films)):
+            for j in range(len(films)):
+                if i != j:
+                    print('Total {} movies {} - common with {} - {}'.format(types[i], len(films[i]), types[j], len(Film.common_films(films[i], films[j]))))
+            print()
+
+
+class Filter:
+    @staticmethod
+    def total_votes(films, min_total_votes, max_total_votes=-1):
+        matches = []
+        for film in films:
+            if film.stats.votes_sum > min_total_votes and (max_total_votes == -1 or film.stats.votes_sum < max_total_votes):
+                matches.append(film)
+        return matches

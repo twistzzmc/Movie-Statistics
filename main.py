@@ -1,7 +1,6 @@
 from Film import Film
 from Stats import Stats
-import matplotlib.pyplot as plt
-import numpy as np
+from Film import Filter
 
 
 if __name__ == "__main__":
@@ -91,31 +90,12 @@ if __name__ == "__main__":
     most_popular_movies = "https://www.imdb.com/chart/moviemeter?pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=4da9d9a5-d299-43f2-9c53-f0efa18182cd&pf_rd_r=GK4AXVJZ58WM5RH6GWF9&pf_rd_s=right-4&pf_rd_t=15506&pf_rd_i=top&ref_=chttp_ql_2"
     top_rated_movies = "https://www.imdb.com/chart/top?pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=4da9d9a5-d299-43f2-9c53-f0efa18182cd&pf_rd_r=9VQV8P7PPVQ6WSZX5943&pf_rd_s=right-4&pf_rd_t=15506&pf_rd_i=moviemeter&ref_=chtmvm_ql_3"
 
-    m_all = Film.load_multiple('movies/all_movies.pickle')
-    action = Film.load_multiple('movies/action_movies.pickle')
-    popular = Film.load_multiple('movies/most_popular_movies.pickle')
-    romance = Film.load_multiple('movies/romance_movies.pickle')
-    war = Film.load_multiple('movies/war_movies.pickle')
+    film_files = ['movies/' + movie_type + '.pickle' for movie_type in ['all_movies', 'most_popular_movies', 'action_movies', 'romance_movies', 'war_movies']]
+    film_types = ['all', 'most popular', 'action', 'romance', 'war']
 
-    action_common = len(Film.common_films(m_all, action))
-    popular_common = len(Film.common_films(m_all, popular))
-    romance_common = len(Film.common_films(m_all, romance))
-    war_common = len(Film.common_films(m_all, war))
-
-    print('Total movies - {}'.format(len(Film.load_multiple('movies/all_movies.pickle'))))
-    print('Total action movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/action_movies.pickle')), action_common))
-    print('Total popular movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/most_popular_movies.pickle')), popular_common))
-    print('Total romance movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/romance_movies.pickle')), romance_common))
-    print('Total war movies - {}, common with all - {}'.format(len(Film.load_multiple('movies/war_movies.pickle')), war_common))
-
-    print('Total action movies - {}, common with romance - {}'.format(len(action), len(Film.common_films(action, romance))))
-    print('Total action movies - {}, common with war - {}'.format(len(action), len(Film.common_films(action, war))))
-
-    # Film.save_movies_not_already_saved_from_urls_in_file('movies/romance_movies_urls.txt', 'movies/romance_movies.pickle')
-    # Film.delete_already_handled_urls('movies/romance_movies_urls.txt', 'movies/romance_movies_urls_copy.txt')
-    # Film.clean_urls('movies/romance_movies_urls.txt')
-    print(Film.search_by_url(Film.load_multiple('movies/romance_movies.pickle'), "https://www.imdb.com//title/tt0290839/?ref_=ttls_li_tt"))
-
-    romance = Film.load_multiple('movies/romance_movies.pickle')
-    romance_unique = Film.get_unique_films(romance)
-    print(len(romance), len(romance_unique))
+    # Film.delete_already_handled_urls('movies/thriller_movies_urls.txt', 'movies/thriller_movies_urls_copy.txt')
+    # Film.get_urls_from_genre('thriller', 1, -1, path='thriller_movies_urls.txt')
+    # Film.save_movies_not_already_saved_from_urls_in_file('movies/thriller_movies_urls.txt', film_files[0])
+    Stats.correlation_between_year_and_average_vote(Filter.total_votes(Film.load_multiple(film_files[0]), 0, 10000))
+    Stats.plot_averaged_films_rankings_votes_distribution(Filter.total_votes(Film.load_multiple(film_files[0]), 0, 10000))
+    Stats.correlation_between_number_of_votes_and_average_vote(Filter.total_votes(Film.load_multiple(film_files[0]), 0, 10000))
